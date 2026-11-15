@@ -1,0 +1,3 @@
+- insert:
+    - id: dsh-login-gateway
+      name: '@local/dsh-login-gateway'

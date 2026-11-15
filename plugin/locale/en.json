@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "DSH login gateway",
+    "description": "Manage DSH login credentials, backgrounds, sandboxed effects, and Turnstile keys."
+  }
+}

@@ -1,0 +1,28 @@
+[Unit]
+Description=DSH login gateway (configure with DSH panel AI)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/dsh-login-gateway/gateway
+EnvironmentFile=/etc/dsh-login-gateway.env
+StateDirectory=dsh-login-gateway
+StateDirectoryMode=0700
+ExecStart=/usr/bin/node /opt/dsh-login-gateway/gateway/server.mjs
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

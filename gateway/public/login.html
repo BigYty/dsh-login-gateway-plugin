@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>登录到 DSH</title>
+  <style>
+    :root { color-scheme: light dark; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; background: #101616; color: #edf2ef; --login-background-image: none; }
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; background: #101616; }
+    #login-wallpaper { position: fixed; inset: 0; z-index: 0; background-image: linear-gradient(rgb(10 18 16 / 48%), rgb(10 18 16 / 48%)), var(--login-background-image); background-size: cover; background-position: center; }
+    #login-customization { position: fixed; inset: 0; z-index: 1; width: 100%; height: 100%; border: 0; background: transparent; }
+    main { position: relative; z-index: 2; width: min(100%, 380px); border: 1px solid #33413d; background: #18211e; padding: 30px; }
+    h1 { margin: 0 0 6px; font-size: 22px; font-weight: 650; }
+    p { margin: 0 0 24px; color: #aebbb5; font-size: 14px; }
+    label { display: block; margin: 16px 0 7px; font-size: 13px; color: #cad4cf; }
+    input { width: 100%; height: 42px; padding: 0 12px; color: #edf2ef; background: #101715; border: 1px solid #46554f; border-radius: 4px; font: inherit; }
+    input:focus { outline: 2px solid #57c49a; outline-offset: 1px; }
+    .shake { animation: shake .12s ease-in-out 3; }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-7px); } 75% { transform: translateX(7px); } }
+    @media (prefers-reduced-motion: reduce) { .shake { animation: none; outline: 2px solid #ff9f91; } }
+    .challenge { min-height: 66px; margin: 20px 0 4px; }
+    .field-error { min-height: 18px; margin: 4px 0 0; color: #ff9f91; font-size: 13px; }
+    button { width: 100%; height: 42px; border: 0; border-radius: 4px; color: #08140f; background: #65d5a8; font: inherit; font-weight: 650; cursor: pointer; }
+    button:disabled { cursor: wait; opacity: .6; }
+    #error { min-height: 20px; margin: 12px 0 0; color: #ff9f91; font-size: 13px; }
+    @media (prefers-color-scheme: light) { :root { background: #f3f6f4; color: #18211e; } body { background: #f3f6f4; } main { background: #fff; border-color: #d5dfda; } p { color: #55645d; } label { color: #28372f; } input { color: #18211e; background: #fff; border-color: #b7c5bd; } }
+  </style>
+  <script data-cfasync="false" src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head>
+<body data-login-background="__BACKGROUND_URL__">
+  <div id="login-wallpaper" aria-hidden="true"></div>
+  <iframe id="login-customization" title="登录页自定义区域" src="/auth/customization" sandbox="allow-scripts" allow="autoplay"></iframe>
+  <main>
+    <h1>登录到 DSH</h1>
+    <p>通过身份验证后继续进入会话。</p>
+    <form id="login" action="/auth/login" method="post">
+      <label for="username">账号</label>
+      <input id="username" name="username" autocomplete="username" maxlength="128" class="__USERNAME_CLASS__" value="__USERNAME_VALUE__" aria-describedby="password-error">
+      <label for="password">密码</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" maxlength="1024" class="__PASSWORD_CLASS__" aria-describedby="password-error">
+      <div id="password-error" class="field-error" role="alert" aria-live="polite">__PASSWORD_ERROR__</div>
+      <div class="challenge">
+        <div class="cf-turnstile" data-sitekey="__SITE_KEY__" data-action="dsh-login" data-callback="dshTurnstileVerified"></div>
+      </div>
+      <div id="turnstile-error" class="field-error" role="alert" aria-live="polite">__TURNSTILE_ERROR__</div>
+      <button id="submit" type="submit">登录</button>
+      <div id="error" role="alert" aria-live="polite">__GENERAL_ERROR__</div>
+    </form>
+  </main>
+  <script data-cfasync="false" nonce="__NONCE__">
+    const form = document.querySelector('#login');
+    const button = document.querySelector('#submit');
+    const error = document.querySelector('#error');
+    const passwordError = document.querySelector('#password-error');
+    const turnstileError = document.querySelector('#turnstile-error');
+    const username = document.querySelector('#username');
+    const password = document.querySelector('#password');
+    const backgroundUrl = document.body.dataset.loginBackground;
+    if (backgroundUrl) {
+      try {
+        const url = new URL(backgroundUrl, window.location.origin);
+        if (url.protocol === 'https:' || (url.origin === window.location.origin && url.pathname.startsWith('/auth/background/'))) {
+          document.documentElement.style.setProperty('--login-background-image', `url("${url.href}")`);
+        }
+      } catch {}
+    }
+
+    function shake(input) {
+      input.classList.remove('shake');
+      void input.offsetWidth;
+      input.classList.add('shake');
+    }
+
+    function readTurnstileToken() {
+      return new FormData(form).get('cf-turnstile-response') || '';
+    }
+
+    window.dshTurnstileVerified = () => { turnstileError.textContent = ''; };
+    username.addEventListener('input', () => { passwordError.textContent = ''; });
+    password.addEventListener('input', () => { passwordError.textContent = ''; });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      error.textContent = '';
+      passwordError.textContent = '';
+      turnstileError.textContent = '';
+
+      const missing = [];
+      if (!username.value.trim()) missing.push(username);
+      if (!password.value) missing.push(password);
+      if (missing.length) {
+        for (const input of missing) shake(input);
+        missing[0].focus();
+        return;
+      }
+      if (!readTurnstileToken()) {
+        turnstileError.textContent = '请完成人机验证！';
+        return;
+      }
+
+      button.disabled = true;
+      try {
+        const response = await fetch(form.action, { method: 'POST', headers: { Accept: 'application/json' }, body: new URLSearchParams(new FormData(form)), credentials: 'same-origin' });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          if (data.code === 'invalid_credentials') passwordError.textContent = '请检查用户名/密码';
+          else if (data.code === 'turnstile_required') turnstileError.textContent = '请完成人机验证！';
+          else error.textContent = data.error || '登录失败，请重试。';
+          if (window.turnstile) turnstile.reset();
+          return;
+        }
+        window.location.replace(response.url || '/');
+      } catch {
+        error.textContent = '网络错误，请重试。';
+        if (window.turnstile) turnstile.reset();
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

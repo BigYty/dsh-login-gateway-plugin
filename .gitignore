@@ -1,0 +1,33 @@
+# Local secrets and deployment state
+.env
+*.env
+*.env.*
+!.env.example
+credentials.json
+*.credentials.json
+*.secret
+*.key
+*.pem
+*.crt
+*.csr
+*.p12
+*.pfx
+cookies.txt
+*.log
+
+# Runtime and host-specific state
+node_modules/
+coverage/
+state/
+backup/
+var/
+run/
+.DS_Store
+
+# Local editor/OS files
+.vscode/
+.idea/
+
+# Never publish local test artifacts
+*.tmp
+*.swp

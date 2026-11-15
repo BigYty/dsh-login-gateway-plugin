@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "DSH 登录管理",
+    "description": "管理 DSH 登录账号、背景、自定义特效与 Turnstile 密钥。"
+  }
+}
