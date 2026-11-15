@@ -1,3 +1,5 @@
+<p align="center"><a href="README.md">英文版</a> | <a href="README.zh-CN.md">中文版</a></p>
+
 # DSH Login Gateway
 
 A DSH login-gateway plugin package: protected login page with Turnstile, account management, safe background-image configuration, and user-authored effects in an isolated sandbox.
