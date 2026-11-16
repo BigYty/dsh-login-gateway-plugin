@@ -33,9 +33,9 @@ Use a local environment file with owner-only permissions (for example, `chmod 60
 
 - `plugin/`: DSH Web settings bundle for account, background, custom sandbox effects, and Turnstile key management.
 - `gateway/`: Node.js service, login page, password-hash helper, and automated tests.
-- `deploy/`: generic systemd and Nginx examples. Replace placeholders through the DSH panel AI after reviewing the existing host configuration.
+- `deploy/snippets/dsh-cookie.conf`: Nginx Cookie/Set-Cookie forwarding include; install it at the path referenced by the Nginx template.
 - `INSTALL_WITH_DSH_AI.md`: detailed DSH panel AI handoff prompt and installation checklist.
-- `SECURITY.md`: reporting guidance and secret-handling rules.
+- `DSH_COMPATIBILITY.md`: declared DSH range and evidence status.
 
 ## Safe defaults
 
@@ -52,7 +52,7 @@ cd gateway
 npm test
 ```
 
-Tests use synthetic credentials and mocked Cloudflare/image API responses; they do not contact production services or contain working credentials.
+This runs gateway, client-contract, and deployment tests. If Nginx is installed, the suite also starts a temporary Nginx instance to verify the auth subrequest and Cookie/Set-Cookie proxy contract; the Nginx cases are skipped when the binary is unavailable.
 
 ## License
 

@@ -6,7 +6,7 @@ import path from 'node:path';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
 import test from 'node:test';
-import { createHandler, hashPassword, loadConfig, loadCredentialState, verifySession } from '../server.mjs';
+import { createHandler, GlobalAuthThrottle, hashPassword, hashPasswordAsync, loadConfig, loadCredentialState, verifySession } from '../server.mjs';
 
 const password = 'correct horse battery staple';
 const config = loadConfig({
@@ -21,8 +21,8 @@ const config = loadConfig({
 });
 
 async function withServer(fetchImpl, run, options = {}) {
-  const { credentialFile, ...handlerOptions } = options;
-  const serverConfig = { ...config, passwordHash: Buffer.from(config.passwordHash), passwordSalt: Buffer.from(config.passwordSalt) };
+  const { credentialFile, configOverrides = {}, ...handlerOptions } = options;
+  const serverConfig = { ...config, ...configOverrides, passwordHash: Buffer.from(config.passwordHash), passwordSalt: Buffer.from(config.passwordSalt) };
   if (credentialFile) serverConfig.credentialFile = credentialFile;
   const server = createServer(createHandler(serverConfig, { fetchImpl, ...handlerOptions }));
   server.listen(0, '127.0.0.1');
@@ -585,6 +585,24 @@ test('login rejects a Turnstile token issued for another hostname', async () => 
   });
 });
 
+test('async password hashing yields to the event loop', async () => {
+  let eventLoopRan = false;
+  const hashPromise = hashPasswordAsync('test-only long password');
+  setImmediate(() => { eventLoopRan = true; });
+  const hash = await hashPromise;
+  assert.equal(eventLoopRan, true);
+  assert.match(hash, /^[a-f0-9]{128}:[a-f0-9]{32}$/);
+});
+test('global auth throttle bounds concurrency and releases capacity after work settles', async () => {
+  const throttle = new GlobalAuthThrottle(10, 60_000, 1);
+  let finish;
+  const pending = throttle.run(() => new Promise((resolve) => { finish = resolve; }));
+  const rejected = await throttle.run(async () => 'not-run');
+  assert.equal(rejected.limited, true);
+  finish('complete');
+  assert.deepEqual(await pending, { limited: false, value: 'complete' });
+  assert.deepEqual(await throttle.run(async () => 'next'), { limited: false, value: 'next' });
+});
 test('wrong password cannot create an authenticated session', async () => {
   await withServer(siteverifySuccess(), async (base) => {
     const response = await fetch(`${base}/login`, {
@@ -594,4 +612,16 @@ test('wrong password cannot create an authenticated session', async () => {
     assert.equal(response.status, 401);
     assert.equal(response.headers.get('set-cookie'), null);
   });
+});
+test('gateway limits total password work across distinct client requests', async () => {
+  await withServer(siteverifySuccess(), async (base) => {
+    const login = (username) => fetch(`${base}/login`, {
+      method: 'POST', redirect: 'manual', headers: { Origin: config.origin, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ username, password: 'wrong-password', 'cf-turnstile-response': 'challenge-token' }),
+    });
+    assert.equal((await login('first-user')).status, 401);
+    const limited = await login('different-user');
+    assert.equal(limited.status, 429);
+    assert.match(limited.headers.get('retry-after'), /\d+/);
+  }, { configOverrides: { authRatePerMinute: 1 } });
 });

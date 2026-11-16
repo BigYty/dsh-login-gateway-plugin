@@ -10,4 +10,4 @@ Run tests with:
 npm test
 ```
 
-The service binds to loopback by default. A reverse proxy must protect DSH routes with `/check` and explicitly proxy the auth endpoints. Review and validate the target host's existing configuration before applying the examples.
+The service binds to loopback by default. A reverse proxy must protect DSH routes with `/check` and explicitly proxy the auth endpoints. `../deploy/snippets/dsh-cookie.conf` provides the required Cookie forwarding include; install it at the path referenced by the Nginx template. `npm test` also runs client-contract tests and, when Nginx is installed, a live auth_request/Cookie integration test.

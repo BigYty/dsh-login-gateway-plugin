@@ -1,6 +1,6 @@
 {
   "name": "@local/dsh-login-gateway",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -10,6 +10,9 @@
   },
   "engines": {
     "dsh": ">=0.2.2-rc.1 <0.3.0-0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh": ">=0.2.2-rc.1 <0.3.0-0"
   },
   "description": "DSH login access, background, and sandboxed page customization settings.",
   "exports": {

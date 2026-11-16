@@ -1,4 +1,4 @@
-import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomBytes, scrypt, scryptSync, timingSafeEqual } from 'node:crypto';
 import { createServer } from 'node:http';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -49,6 +49,8 @@ export function loadConfig(env = process.env) {
     credentialFile: env.CREDENTIALS_FILE || '/var/lib/dsh-login-gateway/credentials.json',
     credentialGeneration: 0,
     ttlSeconds: Math.min(Math.max(Number(env.SESSION_TTL_SECONDS || 28800), 300), 86400),
+    authRatePerMinute: Math.min(Math.max(Number(env.AUTH_RATE_PER_MINUTE || 30), 1), 600),
+    authMaxConcurrent: Math.min(Math.max(Number(env.AUTH_MAX_CONCURRENT || 4), 1), 32),
     port,
   };
 }
@@ -114,9 +116,62 @@ function safeEqualString(a, b) {
   return left.length === right.length && timingSafeEqual(left, right);
 }
 
-function passwordMatches(password, config) {
-  const candidate = scryptSync(password, config.passwordSalt, config.passwordHash.length);
-  return candidate.length === config.passwordHash.length && timingSafeEqual(candidate, config.passwordHash);
+function deriveScrypt(password, salt, length) {
+  return new Promise((resolve, reject) => {
+    scrypt(password, salt, length, (error, derived) => error ? reject(error) : resolve(derived));
+  });
+}
+
+async function passwordMatches(password, config) {
+  try {
+    const candidate = await deriveScrypt(password, config.passwordSalt, config.passwordHash.length);
+    return candidate.length === config.passwordHash.length && timingSafeEqual(candidate, config.passwordHash);
+  } catch {
+    return false;
+  }
+}
+
+export class GlobalAuthThrottle {
+  constructor(maxPerWindow = 30, windowMs = 60_000, maxConcurrent = 4, clock = () => Date.now()) {
+    this.maxPerWindow = Math.max(1, Number(maxPerWindow) || 30);
+    this.windowMs = Math.max(1000, Number(windowMs) || 60_000);
+    this.maxConcurrent = Math.max(1, Number(maxConcurrent) || 4);
+    this.clock = clock;
+    this.timestamps = [];
+    this.active = 0;
+  }
+
+  acquire() {
+    const current = this.clock();
+    this.timestamps = this.timestamps.filter((timestamp) => timestamp + this.windowMs > current);
+    if (this.active >= this.maxConcurrent) return 1;
+    if (this.timestamps.length >= this.maxPerWindow) {
+      return Math.max(1, Math.ceil((this.timestamps[0] + this.windowMs - current) / 1000));
+    }
+    this.timestamps.push(current);
+    this.active += 1;
+    return 0;
+  }
+
+  release() {
+    this.active = Math.max(0, this.active - 1);
+  }
+
+  async run(operation) {
+    const retryAfter = this.acquire();
+    if (retryAfter) return { limited: true, retryAfter };
+    try {
+      return { limited: false, value: await operation() };
+    } finally {
+      this.release();
+    }
+  }
+}
+
+export async function hashPasswordAsync(password) {
+  const salt = randomBytes(16);
+  const hash = await deriveScrypt(password, salt, 64);
+  return `${hash.toString('hex')}:${salt.toString('hex')}`;
 }
 
 function credentialRecord(config) {
@@ -306,6 +361,12 @@ export function createHandler(config, {
   persistCredentials = (record) => persistCredentialRecord(config.credentialFile, record),
 } = {}) {
   const attempts = new Map();
+  const authThrottle = new GlobalAuthThrottle(
+    config.authRatePerMinute ?? 30,
+    60_000,
+    config.authMaxConcurrent ?? 4,
+    now,
+  );
   const pendingRotations = new Map();
   const loginHtml = readFile(path.join(here, 'public/login.html'), 'utf8');
 
@@ -527,7 +588,9 @@ export function createHandler(config, {
       const currentPassword = typeof request.currentPassword === 'string' ? request.currentPassword : '';
       const siteKey = typeof request.siteKey === 'string' ? request.siteKey.trim() : '';
       const secretKey = typeof request.secretKey === 'string' ? request.secretKey.trim() : '';
-      if (!passwordMatches(currentPassword, config)) return sendJson(res, 401, { error: 'Current password is incorrect' });
+      const passwordCheck = await authThrottle.run(() => passwordMatches(currentPassword, config));
+      if (passwordCheck.limited) return sendJson(res, 429, { error: 'Authentication capacity exceeded' }, { 'Retry-After': String(passwordCheck.retryAfter) });
+      if (!passwordCheck.value) return sendJson(res, 401, { error: 'Current password is incorrect' });
       if (!siteKey || siteKey.length > 256 || /[\r\n\u0000-\u001f]/.test(siteKey) || !secretKey || secretKey.length > 512 || /[\r\n\u0000-\u001f]/.test(secretKey)) {
         return sendJson(res, 400, { error: 'Enter a valid Site Key and Secret Key' });
       }
@@ -594,7 +657,9 @@ export function createHandler(config, {
       const currentPassword = typeof request.currentPassword === 'string' ? request.currentPassword : '';
       const nextUsername = typeof request.username === 'string' ? request.username.trim() : config.username;
       const nextPassword = typeof request.newPassword === 'string' ? request.newPassword : '';
-      if (!passwordMatches(currentPassword, config)) return sendJson(res, 401, { error: 'Current password is incorrect' });
+      const passwordCheck = await authThrottle.run(() => passwordMatches(currentPassword, config));
+      if (passwordCheck.limited) return sendJson(res, 429, { error: 'Authentication capacity exceeded' }, { 'Retry-After': String(passwordCheck.retryAfter) });
+      if (!passwordCheck.value) return sendJson(res, 401, { error: 'Current password is incorrect' });
       if (!/^[A-Za-z0-9._-]{1,64}$/.test(nextUsername)) return sendJson(res, 400, { error: 'Username must be 1-64 letters, numbers, dots, underscores, or hyphens' });
       if (nextPassword && (nextPassword.length < 12 || nextPassword.length > 1024)) {
         return sendJson(res, 400, { error: 'New password must be at least 12 characters' });
@@ -604,7 +669,9 @@ export function createHandler(config, {
       let passwordHash = config.passwordHash;
       let passwordSalt = config.passwordSalt;
       if (nextPassword) {
-        const [hash, salt] = hashPassword(nextPassword).split(':');
+        const hashResult = await authThrottle.run(() => hashPasswordAsync(nextPassword));
+        if (hashResult.limited) return sendJson(res, 429, { error: 'Authentication capacity exceeded' }, { 'Retry-After': String(hashResult.retryAfter) });
+        const [hash, salt] = hashResult.value.split(':');
         passwordHash = Buffer.from(hash, 'hex');
         passwordSalt = Buffer.from(salt, 'hex');
       }
@@ -692,7 +759,13 @@ export function createHandler(config, {
       turnstileValid = false;
     }
 
-    const credentialsValid = safeEqualString(username, config.username) && passwordMatches(password, config);
+    const passwordCheck = turnstileValid
+      ? await authThrottle.run(() => passwordMatches(password, config))
+      : { limited: false, value: false };
+    if (passwordCheck.limited) {
+      return sendJson(res, 429, { error: 'Authentication capacity exceeded' }, { 'Retry-After': String(passwordCheck.retryAfter) });
+    }
+    const credentialsValid = safeEqualString(username, config.username) && passwordCheck.value;
     if (!turnstileValid || !credentialsValid) {
       if (attempts.size >= 2048) {
         for (const [address, value] of attempts) {

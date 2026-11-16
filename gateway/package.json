@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "test": "node --test"
+    "test": "node --test test/*.test.mjs ../deploy/*.test.mjs ../plugin/*.test.mjs"
   },
   "engines": {
     "node": ">=22.19.0"
