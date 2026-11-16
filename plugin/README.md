@@ -2,7 +2,8 @@
 
 A Web settings page for the DSH login gateway, registered under Settings as **DSH login**. It manages the login account, backgrounds, sandboxed custom effects, Turnstile keys, and logout. Updating credentials revokes all old sessions and returns the browser to the login page.
 
-## Runtime compatibility
+The client behavior suite executes the bundle factory against a small React/DSH context harness. It verifies settings section and locale registration, account updates, appearance saves, Turnstile rotation startup, and logout requests; it does not replace testing against every released DSH runtime.
+
 
 The plugin declares an explicit DSH peer/runtime range: `>=0.2.2-rc.1 <0.3.0-0`. Changes to DSH service or slot contracts require a compatibility row and a local integration/client regression before widening this range. Current validation is limited to the declared range; it does not claim compatibility with earlier DSH releases.
 

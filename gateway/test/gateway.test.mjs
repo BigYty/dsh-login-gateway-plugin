@@ -101,6 +101,27 @@ test('configuration rejects non-FQDN hostnames and non-HTTPS origins', () => {
   assert.throws(() => loadConfig({ ...env, PUBLIC_ORIGIN: 'http://dsh.example.test' }), /HTTPS/);
 });
 
+test('session TTL defaults and accepts configured inclusive boundaries', () => {
+  const env = {
+    EXPECTED_HOSTNAME: 'dsh.example.test', PUBLIC_ORIGIN: 'https://dsh.example.test', AUTH_USERNAME: 'demo-user',
+    AUTH_PASSWORD_HASH: hashPassword(password), SESSION_SECRET: 'test-only-secret-with-at-least-32-bytes',
+    TURNSTILE_SITE_KEY: 'site-key', TURNSTILE_SECRET_KEY: 'test-secret',
+  };
+  assert.equal(loadConfig(env).ttlSeconds, 28_800);
+  assert.equal(loadConfig({ ...env, SESSION_TTL_SECONDS: '300' }).ttlSeconds, 300);
+  assert.equal(loadConfig({ ...env, SESSION_TTL_SECONDS: '86400' }).ttlSeconds, 86_400);
+});
+
+test('session TTL rejects malformed, negative, fractional, and out-of-range values', () => {
+  const env = {
+    EXPECTED_HOSTNAME: 'dsh.example.test', PUBLIC_ORIGIN: 'https://dsh.example.test', AUTH_USERNAME: 'demo-user',
+    AUTH_PASSWORD_HASH: hashPassword(password), SESSION_SECRET: 'test-only-secret-with-at-least-32-bytes',
+    TURNSTILE_SITE_KEY: 'site-key', TURNSTILE_SECRET_KEY: 'test-secret',
+  };
+  for (const value of ['abc', '', '-1', '-300', '300.5', '299', '86401', '9007199254740992']) {
+    assert.throws(() => loadConfig({ ...env, SESSION_TTL_SECONDS: value }), /SESSION_TTL_SECONDS must be an integer/);
+  }
+});
 test('login page exposes site key but no secret and enforces CSP nonce', async () => {
   await withServer(siteverifySuccess(), async (base) => {
     const response = await fetch(`${base}/login`);

@@ -54,10 +54,15 @@ DSH 的 Provider、模型和 API Key 应在 DSH 面板“设置 → 模型”中
 
 网关配置文件应使用 root 或服务账号可读、其他用户不可读的权限，例如 `0600`。密码应通过仓库提供的交互式工具生成 scrypt 哈希，不要把明文密码写入配置或命令行历史。
 
+### 会话有效期配置
+
+`SESSION_TTL_SECONDS` 可选，缺省为 `28800` 秒（8 小时）。显式设置时必须为 `300`–`86400` 之间的整数，包含两端。非数字、负数、小数及越界值会在启动配置加载阶段报错并停止服务，不会静默转换成无法使用的会话。
+
 ### DSH 版本兼容
 
 插件明确声明 DSH `>=0.2.2-rc.1 <0.3.0-0`。安装后还应按 [`DSH_COMPATIBILITY.md`](./DSH_COMPATIBILITY.md) 核对当前版本的验证状态；扩大版本范围前需先补对应宿主/客户端回归。
 
+## 自定义登录页代码
 
 设置页的自定义编辑框允许编写自己的 HTML、CSS 和 JavaScript。可以自行制作：
 
@@ -102,9 +107,12 @@ https://apis.btstu.cn/sjbz/api.php?lx=dongman&format=images
 
 ## 目录
 
-- `plugin/`：DSH Web 设置插件
-- `gateway/`：Node.js 认证网关、登录页面和测试
-- `deploy/`：systemd 与 Nginx 通用模板
+- `plugin/`：DSH Web 设置插件及客户端行为测试
+- `gateway/server.mjs`：网关配置校验、会话/凭据基础设施和路由依赖组装
+- `gateway/auth-routes.mjs`：登录、会话、账号和 Turnstile 路由
+- `gateway/background-urls.mjs`：背景 URL 校验、规范化和图片代理路径映射
+- `gateway/appearance-routes.mjs`：登录页外观、图片上传/解析和隔离自定义页路由
+- `deploy/`：systemd、Nginx 模板、Cookie 转发片段及部署集成测试
 - `INSTALL_WITH_DSH_AI.md`：DSH 面板 AI 安装交接说明
 - `SECURITY.md`：安全策略
 - `PUBLISH_CHECKLIST.md`：GitHub 发布检查清单
@@ -118,7 +126,7 @@ cd gateway
 npm test
 ```
 
-测试使用模拟凭据和模拟 Cloudflare/图片接口，不包含可用的生产密钥。
+该命令会运行网关集成测试、客户端行为测试和部署测试，覆盖 TTL 默认值/非法值/边界值、插件 section 与 locale 注册、账号/外观/Turnstile/登出操作及 Nginx 鉴权 Cookie 转发。安装了 Nginx 时会额外执行 `nginx -t` 和临时反代集成测试；未安装则跳过这两项。测试使用模拟凭据和模拟 Cloudflare/图片接口，不包含生产密钥，也不会访问生产服务。
 
 ## 安全提醒
 

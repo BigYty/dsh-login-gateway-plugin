@@ -29,10 +29,14 @@ The panel AI must call these out before installation and help configure them loc
 
 Use a local environment file with owner-only permissions (for example, `chmod 600`). `gateway/.env.example` contains placeholders only and is not a ready-to-run config.
 
+### Session lifetime
+
+`SESSION_TTL_SECONDS` defaults to `28800` (8 hours). When configured, it must be an integer from `300` through `86400`, inclusive. Non-numeric, negative, fractional, or out-of-range values make the gateway fail at startup; invalid values are never silently converted into an unusable session.
+
 ## Repository layout
 
 - `plugin/`: DSH Web settings bundle for account, background, custom sandbox effects, and Turnstile key management.
-- `gateway/`: Node.js service, login page, password-hash helper, and automated tests.
+- `gateway/`: Node.js service, split into configuration/session composition (`server.mjs`), authentication/account/Turnstile routes (`auth-routes.mjs`), shared background URL policy (`background-urls.mjs`), and appearance/image routes (`appearance-routes.mjs`), plus the login page and tests.
 - `deploy/snippets/dsh-cookie.conf`: Nginx Cookie/Set-Cookie forwarding include; install it at the path referenced by the Nginx template.
 - `INSTALL_WITH_DSH_AI.md`: detailed DSH panel AI handoff prompt and installation checklist.
 - `DSH_COMPATIBILITY.md`: declared DSH range and evidence status.
@@ -52,7 +56,7 @@ cd gateway
 npm test
 ```
 
-This runs gateway, client-contract, and deployment tests. If Nginx is installed, the suite also starts a temporary Nginx instance to verify the auth subrequest and Cookie/Set-Cookie proxy contract; the Nginx cases are skipped when the binary is unavailable.
+This runs gateway, client behavior, and deployment tests. Coverage includes session-TTL validation/default/boundaries, module registration and key settings actions, and Nginx auth/Cookie forwarding. If Nginx is installed, the suite runs syntax and live proxy checks; those tests are skipped when the binary is unavailable. Tests use synthetic credentials and mocked upstreams; they do not contact production services or contain working credentials.
 
 ## License
 
