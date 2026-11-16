@@ -417,7 +417,9 @@ window.__ModuleLoader__.load({
                   const file = event.target.files?.[0] || null;
                   event.target.value = '';
                   setBackgroundFile(file);
-                  if (file && fieldStates.backgroundFile?.kind === 'error' && file.size <= 4 * 1024 * 1024 && ['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+                  if (!file && fieldStates.backgroundFile?.kind === 'error') {
+                    checkField('backgroundFile', null, () => true);
+                  } else if (file && fieldStates.backgroundFile?.kind === 'error' && file.size <= 4 * 1024 * 1024 && ['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
                     checkField('backgroundFile', file, (candidate) => candidate.size <= 4 * 1024 * 1024 && ['image/png', 'image/jpeg', 'image/webp'].includes(candidate.type));
                   } else if (fieldStates.backgroundFile?.kind === 'success') {
                     setField('backgroundFile', { kind: 'idle', message: '' });
