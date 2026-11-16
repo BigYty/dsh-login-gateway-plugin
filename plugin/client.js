@@ -58,25 +58,42 @@ window.__ModuleLoader__.load({
       },
     };
     const css = `
-      .dsh-access-page { max-width: 760px; color: var(--dsw-alias-label-primary); display: flex; flex-direction: column; gap: 18px; }
+      .dsh-access-page { max-width: 760px; color: var(--ui-text); display: flex; flex-direction: column; gap: 18px; }
       .dsh-access-title { margin: 0; font-size: 18px; font-weight: 600; }
-      .dsh-access-intro, .dsh-access-hint { margin: 0; color: var(--dsw-alias-label-secondary); font-size: 13px; line-height: 1.5; }
-      .dsh-access-block { display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--dsw-alias-border-l1); padding-top: 16px; }
-      .dsh-access-block h3 { margin: 0; font-size: 15px; font-weight: 600; }
-      .dsh-access-row { display: grid; grid-template-columns: minmax(140px, 190px) minmax(0, 1fr); align-items: start; gap: 16px; }
-      .dsh-access-row label { padding-top: 9px; font-size: 13px; }
+      .dsh-access-intro, .dsh-access-hint { margin: 0; color: var(--ui-text-dim); font-size: 13px; line-height: 1.5; }
+      .dsh-access-block { display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--ui-border); padding-top: 16px; }
+      .dsh-access-block h3 { margin: 0; color: var(--ui-text); font-size: 15px; font-weight: 600; }
+      .dsh-access-row { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+      .dsh-access-row > label { font-size: 13px; color: var(--ui-text); }
       .dsh-access-field { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-      .dsh-access-field input, .dsh-access-field textarea { width: 100%; min-width: 0; padding: 9px 10px; color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-1); border: 1px solid var(--dsw-alias-border-l2); border-radius: 4px; font: inherit; }
+      .dsh-access-field input, .dsh-access-field textarea { width: 100%; min-width: 0; padding: 9px 10px; color: var(--ui-text); background: transparent; border: 0; border-radius: 10px; outline: 0; font: inherit; }
       .dsh-access-field input { height: 38px; }
       .dsh-access-field textarea { min-height: 240px; resize: vertical; line-height: 1.45; font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; tab-size: 2; }
-      .dsh-access-field input:focus-visible, .dsh-access-field textarea:focus-visible, .dsh-access-button:focus-visible { outline: var(--dsw-focus-ring-width, 2px) solid var(--dsw-focus-ring-color, var(--dsw-alias-brand-primary)); outline-offset: 2px; }
-      .dsh-access-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-      .dsh-access-button { min-height: 36px; padding: 0 14px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 4px; color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-1); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-      .dsh-access-button-primary { color: var(--dsw-alias-bg-base); border-color: var(--dsw-alias-brand-primary); background: var(--dsw-alias-brand-primary); }
+      .dsh-access-box { position: relative; display: flex; align-items: center; border: 1px solid var(--ui-border); border-radius: 10px; background: var(--ui-bg); transition: border-color .2s ease, box-shadow .2s ease, transform .12s ease; }
+      .dsh-access-box:focus-within { border-color: color-mix(in srgb, var(--ui-brand) 60%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-brand) 14%, transparent); }
+      .dsh-access-box[data-state='error'] { border-color: var(--ui-danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-danger) 15%, transparent); animation: dsh-field-shake .18s ease-in-out; }
+      .dsh-access-box[data-state='success'] { border-color: var(--ui-success); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-success) 15%, transparent); }
+      @keyframes dsh-field-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
+      @media (prefers-reduced-motion: reduce) { .dsh-access-box[data-state='error'] { animation: none; } }
+      .dsh-access-box > input, .dsh-access-box > textarea { flex: 1; min-width: 0; }
+      .dsh-field-mark { flex: 0 0 auto; width: 18px; height: 18px; display: none; align-items: center; justify-content: center; border-radius: 50%; margin-right: 10px; color: var(--ui-bg); font-size: 11px; font-weight: 700; line-height: 1; }
+      .dsh-field-mark[data-state='error'] { display: inline-flex; background: var(--ui-danger); }
+      .dsh-field-mark[data-state='success'] { display: inline-flex; background: var(--ui-success); }
+      .dsh-field-mark svg { display: block; width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+      .dsh-field-message { min-height: 18px; margin: 0; color: var(--ui-text-dim); font-size: 11px; line-height: 1.45; }
+      .dsh-field-message[data-state='error'] { color: var(--ui-danger); }
+      .dsh-field-message[data-state='success'] { color: var(--ui-success); }
+      .dsh-field-submit { margin-left: auto; flex: 0 0 auto; height: 30px; padding: 0 12px; border: 0; border-radius: 7px; background: var(--ui-brand); color: var(--ui-bg); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; transition: transform .12s ease, filter .15s ease; }
+      .dsh-access-buttons { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+      .dsh-access-field input:focus-visible, .dsh-access-field textarea:focus-visible, .dsh-access-button:focus-visible { outline: 2px solid var(--ui-brand); outline-offset: 2px; }
+      .dsh-access-actions { display: flex; align-items: center; gap: 10px; min-height: 30px; }
+      .dsh-access-actions > .dsh-field-message { flex: 1 1 auto; }
+      .dsh-access-button { min-height: 30px; padding: 0 12px; border: 1px solid var(--ui-border); border-radius: 7px; color: var(--ui-text); background: var(--ui-surface); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+      .dsh-access-button-primary { color: var(--ui-bg); border-color: var(--ui-brand); background: var(--ui-brand); }
       .dsh-access-button:disabled { cursor: wait; opacity: .6; }
-      .dsh-access-status { min-height: 20px; margin: 0; color: var(--dsw-alias-state-error-primary); font-size: 13px; }
-      .dsh-access-status[data-kind='success'] { color: var(--dsw-alias-state-success-primary); }
-      @media (max-width: 620px) { .dsh-access-row { grid-template-columns: 1fr; gap: 6px; } .dsh-access-row label { padding-top: 0; } }
+      .dsh-access-status { min-height: 20px; margin: 0; color: var(--ui-danger); font-size: 13px; }
+      .dsh-access-status[data-kind='success'] { color: var(--ui-success); }
+      @media (max-width: 620px) { .dsh-access-row { gap: 6px; } }
     `;
 
     let translate = (key) => key;
@@ -87,6 +104,7 @@ window.__ModuleLoader__.load({
       const [newPassword, setNewPassword] = React.useState('');
       const [confirmPassword, setConfirmPassword] = React.useState('');
       const [backgroundUrl, setBackgroundUrl] = React.useState('');
+      const [backgroundFile, setBackgroundFile] = React.useState(null);
       const [customHtml, setCustomHtml] = React.useState('');
       const [turnstileConfigured, setTurnstileConfigured] = React.useState(false);
       const [turnstileSiteKey, setTurnstileSiteKey] = React.useState('');
@@ -96,6 +114,7 @@ window.__ModuleLoader__.load({
       const [appearanceStatus, setAppearanceStatus] = React.useState({ text: '', kind: 'error' });
       const [turnstileStatusMessage, setTurnstileStatusMessage] = React.useState({ text: '', kind: 'error' });
       const [sessionStatus, setSessionStatus] = React.useState({ text: '', kind: 'error' });
+      const [fieldStates, setFieldStates] = React.useState({});
       const [busy, setBusy] = React.useState(false);
       const [loading, setLoading] = React.useState(true);
       const turnstileCheckId = React.useRef('');
@@ -114,8 +133,10 @@ window.__ModuleLoader__.load({
           if (event.data.ok) {
             setTurnstileConfigured(true);
             setTurnstileStatusMessage({ text: 'keyCheckSaved', kind: 'success' });
+            for (const name of ['turnstileSiteKey', 'turnstileSecretKey', 'turnstilePassword']) setField(name, { kind: 'success', message: '' });
           } else {
             setTurnstileStatusMessage({ text: 'keyCheckFailed', kind: 'error' });
+            for (const name of ['turnstileSiteKey', 'turnstileSecretKey', 'turnstilePassword']) setField(name, { kind: 'error', message: tx('keyCheckFailed') });
           }
         };
         window.addEventListener('message', onMessage);
@@ -146,8 +167,19 @@ window.__ModuleLoader__.load({
 
       const submit = async (event) => {
         event.preventDefault();
-        if (!currentPassword) return setAccountStatus({ text: 'currentRequired', kind: 'error' });
-        if (newPassword !== confirmPassword) return setAccountStatus({ text: 'passwordMismatch', kind: 'error' });
+        setAccountStatus({ text: '', kind: 'error' });
+        const accountChecks = {
+          currentPassword: [Boolean(currentPassword), tx('currentRequired')],
+          username: [/^[A-Za-z0-9._-]{1,64}$/.test(username), tx('usernameHint')],
+          newPassword: [!newPassword || newPassword.length >= 12, tx('passwordHint')],
+          confirmPassword: [newPassword === confirmPassword, tx('passwordMismatch')],
+        };
+        let accountValid = true;
+        for (const [name, [valid, message]] of Object.entries(accountChecks)) {
+          setField(name, { kind: valid ? 'idle' : 'error', message: valid ? '' : message });
+          accountValid &&= valid;
+        }
+        if (!accountValid) return;
         setBusy(true);
         setAccountStatus({ text: '', kind: 'error' });
         try {
@@ -159,70 +191,91 @@ window.__ModuleLoader__.load({
           });
           if (!response.ok) throw new Error('update');
           setAccountStatus({ text: 'saved', kind: 'success' });
+          for (const name of Object.keys(accountChecks)) setField(name, { kind: 'success', message: '' });
           setCurrentPassword('');
           setNewPassword('');
           setConfirmPassword('');
           window.setTimeout(() => window.location.replace('/auth/login'), 900);
         } catch {
           setAccountStatus({ text: 'updateFailed', kind: 'error' });
+          setField('currentPassword', { kind: 'error', message: tx('updateFailed') });
         } finally {
           setBusy(false);
         }
       };
 
       const saveAppearance = async () => {
+        setAppearanceStatus({ text: '', kind: 'error' });
+        let backgroundValid = true;
+        try {
+          if (backgroundUrl.trim()) {
+            const parsed = new URL(backgroundUrl.trim());
+            backgroundValid = parsed.protocol === 'https:' || parsed.hostname.toLowerCase() === '3650000.xyz';
+          }
+        } catch { backgroundValid = false; }
+        const fileValid = !backgroundFile || (backgroundFile.size <= 4 * 1024 * 1024 && ['image/png', 'image/jpeg', 'image/webp'].includes(backgroundFile.type));
+        const appearanceChecks = {
+          backgroundUrl: [backgroundValid, tx('backgroundHint')],
+          backgroundFile: [fileValid, tx('invalidImage')],
+          customHtml: [customHtml.length <= 32768, tx('customHtmlHint')],
+        };
+        let appearanceValid = true;
+        for (const [name, [valid, message]] of Object.entries(appearanceChecks)) {
+          setField(name, { kind: valid ? 'idle' : 'error', message: valid ? '' : message });
+          appearanceValid &&= valid;
+        }
+        if (!appearanceValid) return;
         setBusy(true);
         setAppearanceStatus({ text: '', kind: 'error' });
         try {
+          const nextBackgroundUrl = backgroundFile ? await uploadBackground(backgroundFile) : backgroundUrl;
           const response = await fetch('/auth/admin/preferences', {
             method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ backgroundUrl, customHtml }),
+            body: JSON.stringify({ backgroundUrl: nextBackgroundUrl, customHtml }),
           });
           if (!response.ok) throw new Error('appearance');
+          setBackgroundUrl(nextBackgroundUrl);
+          setBackgroundFile(null);
           setAppearanceStatus({ text: customHtml.trim() ? 'customHtmlSaved' : 'backgroundSaved', kind: 'success' });
+          setField('backgroundUrl', { kind: 'success', message: '' });
+          setField('backgroundFile', { kind: 'success', message: '' });
+          setField('customHtml', { kind: 'success', message: '' });
         } catch {
           setAppearanceStatus({ text: 'appearanceFailed', kind: 'error' });
+          setField(backgroundFile ? 'backgroundFile' : 'backgroundUrl', { kind: 'error', message: tx(backgroundFile ? 'backgroundUploadFailed' : 'appearanceFailed') });
         } finally {
           setBusy(false);
         }
       };
 
-      const uploadBackground = async (event) => {
-        const file = event.target.files?.[0];
-        event.target.value = '';
-        if (!file) return;
-        if (file.size > 4 * 1024 * 1024 || !['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
-          setAppearanceStatus({ text: 'invalidImage', kind: 'error' });
-          return;
+      const uploadBackground = async (file) => {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        let binary = '';
+        for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+          binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
         }
-        setBusy(true);
-        setAppearanceStatus({ text: '', kind: 'error' });
-        try {
-          const bytes = new Uint8Array(await file.arrayBuffer());
-          let binary = '';
-          for (let offset = 0; offset < bytes.length; offset += 0x8000) {
-            binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
-          }
-          const response = await fetch('/auth/admin/background', {
-            method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: file.name, data: btoa(binary) }),
-          });
-          const data = await response.json().catch(() => ({}));
-          if (!response.ok) throw new Error(data.error || 'upload');
-          setBackgroundUrl(data.backgroundUrl);
-          setAppearanceStatus({ text: 'backgroundSaved', kind: 'success' });
-        } catch {
-          setAppearanceStatus({ text: 'backgroundUploadFailed', kind: 'error' });
-        } finally {
-          setBusy(false);
-        }
+        const response = await fetch('/auth/admin/background', {
+          method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: file.name, data: btoa(binary) }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'upload');
+        return data.backgroundUrl;
       };
 
       const verifyTurnstileKeys = async () => {
-        if (!turnstileSiteKey.trim() || !turnstileSecretKey.trim() || !turnstilePassword) {
-          setTurnstileStatusMessage({ text: 'keyFieldsRequired', kind: 'error' });
-          return;
+        setTurnstileStatusMessage({ text: '', kind: 'error' });
+        const keyChecks = {
+          turnstileSiteKey: [Boolean(turnstileSiteKey.trim()), tx('keyFieldsRequired')],
+          turnstileSecretKey: [Boolean(turnstileSecretKey.trim()), tx('keyFieldsRequired')],
+          turnstilePassword: [Boolean(turnstilePassword), tx('keyFieldsRequired')],
+        };
+        let keysValid = true;
+        for (const [name, [valid, message]] of Object.entries(keyChecks)) {
+          setField(name, { kind: valid ? 'idle' : 'error', message: valid ? '' : message });
+          keysValid &&= valid;
         }
+        if (!keysValid) return;
         const popup = window.open('about:blank', '_blank');
         if (!popup) {
           setTurnstileStatusMessage({ text: 'keyStartFailed', kind: 'error' });
@@ -247,6 +300,7 @@ window.__ModuleLoader__.load({
             setTurnstileSiteKey('');
             setTurnstileSecretKey('');
             setTurnstileStatusMessage({ text: 'keyCheckFailed', kind: 'error' });
+            for (const name of ['turnstileSiteKey', 'turnstileSecretKey', 'turnstilePassword']) setField(name, { kind: 'error', message: tx('keyCheckFailed') });
           }, 5 * 60 * 1000);
           setTurnstileStatusMessage({ text: 'keyCheckMessage', kind: 'success' });
         } catch {
@@ -273,10 +327,33 @@ window.__ModuleLoader__.load({
       };
 
       const tx = (key) => translate(key);
-      const renderStatus = (state) => {
-        const text = state.text === 'load' ? 'loadError' : state.text;
-        return h('p', { className: 'dsh-access-status', 'data-kind': state.kind, role: 'status', 'aria-live': 'polite' }, text ? tx(text) : '');
+      const setField = (name, state) => setFieldStates((current) => ({ ...current, [name]: state }));
+      const checkField = (name, value, validate) => {
+        const valid = validate(value);
+        if (valid && fieldStates[name]?.kind === 'error') setField(name, { kind: 'idle', message: '' });
+        return valid;
       };
+      const markField = (name) => {
+        const state = fieldStates[name] || { kind: 'idle' };
+        if (state.kind === 'success') return h('span', { className: 'dsh-field-mark', 'data-state': 'success', 'aria-hidden': true, dangerouslySetInnerHTML: { __html: '<svg viewBox="0 0 24 24" focusable="false"><path d="M5.5 12.5l4.2 4.1 8.8-9.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' } });
+        if (state.kind === 'error') return h('span', { className: 'dsh-field-mark', 'data-state': 'error', 'aria-hidden': true }, '!');
+        return null;
+      };
+      const fieldMessage = (name, fallback) => {
+        const state = fieldStates[name] || { kind: 'idle' };
+        return h('p', { className: 'dsh-field-message', 'data-state': state.kind, id: `dsh-field-${name}-message`, 'aria-live': 'polite' }, state.message || fallback);
+      };
+      const inputProps = (name, value, onChange, extra = {}, validate = (next) => Boolean(next)) => ({ ...extra, value, 'data-field-state': fieldStates[name]?.kind || 'idle', 'aria-invalid': fieldStates[name]?.kind === 'error' ? 'true' : 'false', 'aria-describedby': `dsh-field-${name}-message`, onChange: (event) => { onChange(event); const state = fieldStates[name]?.kind; if (state === 'error') checkField(name, event.target.value, validate); else if (state === 'success') setField(name, { kind: 'idle', message: '' }); } });
+
+      const fieldBox = (name, input, fallback) => h(React.Fragment, null,
+        h('div', { className: 'dsh-access-box', 'data-state': fieldStates[name]?.kind || 'idle' }, input, markField(name)),
+        fieldMessage(name, fallback),
+      );
+      const renderStatus = (state, fallback = '') => {
+        const text = state.text === 'load' ? 'loadError' : state.text;
+        return h('p', { className: 'dsh-field-message', 'data-state': state.text ? state.kind : 'idle', role: 'status', 'aria-live': 'polite' }, text ? tx(text) : fallback);
+      };
+      const actionLine = (state, fallback, button) => h('div', { className: 'dsh-access-actions' }, renderStatus(state, fallback), button);
       return h(React.Fragment, null,
         h('style', null, css),
         h('section', { className: 'dsh-access-page' },
@@ -297,59 +374,67 @@ window.__ModuleLoader__.load({
             h('h3', null, tx('updateTitle')),
             h('div', { className: 'dsh-access-row' },
               h('label', { htmlFor: 'dsh-access-current' }, tx('currentPassword')),
-              h('div', { className: 'dsh-access-field' }, h('input', { id: 'dsh-access-current', type: 'password', autoComplete: 'current-password', required: true, value: currentPassword, onChange: (e) => setCurrentPassword(e.target.value) })),
+              h('div', { className: 'dsh-access-field' }, fieldBox('currentPassword', h('input', inputProps('currentPassword', currentPassword, (e) => setCurrentPassword(e.target.value), { id: 'dsh-access-current', type: 'password', autoComplete: 'current-password' }, (value) => Boolean(value))), tx('currentRequired'))),
             ),
             h('div', { className: 'dsh-access-row' },
               h('label', { htmlFor: 'dsh-access-username' }, tx('username')),
               h('div', { className: 'dsh-access-field' },
-                h('input', { id: 'dsh-access-username', autoComplete: 'username', maxLength: 64, value: username, onChange: (e) => setUsername(e.target.value) }),
-                h('p', { className: 'dsh-access-hint' }, tx('usernameHint')),
+                fieldBox('username', h('input', inputProps('username', username, (e) => setUsername(e.target.value), { id: 'dsh-access-username', autoComplete: 'username', maxLength: 64 }, (value) => /^[A-Za-z0-9._-]{1,64}$/.test(value))), tx('usernameHint')),
               ),
             ),
             h('div', { className: 'dsh-access-row' },
               h('label', { htmlFor: 'dsh-access-new-password' }, tx('newPassword')),
               h('div', { className: 'dsh-access-field' },
-                h('input', { id: 'dsh-access-new-password', type: 'password', autoComplete: 'new-password', minLength: 12, maxLength: 1024, value: newPassword, onChange: (e) => setNewPassword(e.target.value) }),
-                h('p', { className: 'dsh-access-hint' }, tx('passwordHint')),
+                fieldBox('newPassword', h('input', inputProps('newPassword', newPassword, (e) => {
+                  const value = e.target.value;
+                  setNewPassword(value);
+                  if (fieldStates.confirmPassword?.kind === 'error' && confirmPassword === value) setField('confirmPassword', { kind: 'idle', message: '' });
+                }, { id: 'dsh-access-new-password', type: 'password', autoComplete: 'new-password', maxLength: 1024 }, (value) => !value || value.length >= 12)), tx('passwordHint')),
               ),
             ),
             h('div', { className: 'dsh-access-row' },
               h('label', { htmlFor: 'dsh-access-confirm-password' }, tx('confirmPassword')),
-              h('div', { className: 'dsh-access-field' }, h('input', { id: 'dsh-access-confirm-password', type: 'password', autoComplete: 'new-password', maxLength: 1024, value: confirmPassword, onChange: (e) => setConfirmPassword(e.target.value) })),
+              h('div', { className: 'dsh-access-field' }, fieldBox('confirmPassword', h('input', inputProps('confirmPassword', confirmPassword, (e) => setConfirmPassword(e.target.value), { id: 'dsh-access-confirm-password', type: 'password', autoComplete: 'new-password', maxLength: 1024 }, (value) => value === newPassword)), tx('passwordMismatch'))),
             ),
-            h('div', { className: 'dsh-access-actions' },
-              h('button', { className: 'dsh-access-button dsh-access-button-primary', type: 'submit', disabled: busy || loading }, busy ? tx('saving') : tx('save')),
-            ),
-            renderStatus(accountStatus),
+            actionLine(accountStatus, tx('passwordHint'), h('button', { className: 'dsh-access-button dsh-access-button-primary dsh-field-submit', type: 'submit', disabled: busy || loading }, busy ? tx('saving') : tx('save'))),
           ),
           h('section', { className: 'dsh-access-block' },
             h('h3', null, tx('loginPageTitle')),
             h('div', { className: 'dsh-access-row' },
               h('label', { htmlFor: 'dsh-access-background-url' }, tx('backgroundUrl')),
               h('div', { className: 'dsh-access-field' },
-                h('input', { id: 'dsh-access-background-url', type: 'url', inputMode: 'url', maxLength: 2048, placeholder: 'http://3650000.xyz/api/?type=img&mode=3,5,7,8,9', value: backgroundUrl, onChange: (e) => setBackgroundUrl(e.target.value) }),
-                h('p', { className: 'dsh-access-hint' }, tx('backgroundHint')),
+                fieldBox('backgroundUrl', h('input', inputProps('backgroundUrl', backgroundUrl, (e) => setBackgroundUrl(e.target.value), { id: 'dsh-access-background-url', type: 'text', inputMode: 'url', maxLength: 2048, placeholder: 'http://3650000.xyz/api/?type=img&mode=3,5,7,8,9' }, (value) => { if (!value.trim()) return true; try { const url = new URL(value.trim()); return url.protocol === 'https:' || url.hostname.toLowerCase() === '3650000.xyz'; } catch { return false; } })), tx('backgroundHint')),
               ),
             ),
             h('div', { className: 'dsh-access-row' },
               h('label', { htmlFor: 'dsh-access-background-file' }, tx('uploadImage')),
-              h('div', { className: 'dsh-access-field' },
-                h('input', { id: 'dsh-access-background-file', type: 'file', accept: 'image/png,image/jpeg,image/webp', disabled: busy, onChange: uploadBackground }),
-                h('p', { className: 'dsh-access-hint' }, tx('invalidImage')),
-              ),
+              h('div', { className: 'dsh-access-field' }, fieldBox('backgroundFile', h('input', {
+                id: 'dsh-access-background-file', type: 'file', accept: 'image/png,image/jpeg,image/webp', disabled: busy,
+                'data-field-state': fieldStates.backgroundFile?.kind || 'idle',
+                'aria-invalid': fieldStates.backgroundFile?.kind === 'error' ? 'true' : 'false',
+                'aria-describedby': 'dsh-field-backgroundFile-message',
+                onChange: (event) => {
+                  const file = event.target.files?.[0] || null;
+                  event.target.value = '';
+                  setBackgroundFile(file);
+                  if (file && fieldStates.backgroundFile?.kind === 'error' && file.size <= 4 * 1024 * 1024 && ['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+                    checkField('backgroundFile', file, (candidate) => candidate.size <= 4 * 1024 * 1024 && ['image/png', 'image/jpeg', 'image/webp'].includes(candidate.type));
+                  } else if (fieldStates.backgroundFile?.kind === 'success') {
+                    setField('backgroundFile', { kind: 'idle', message: '' });
+                  }
+                },
+              }), tx('invalidImage'))),
             ),
             h('div', { className: 'dsh-access-row' },
               h('label', { htmlFor: 'dsh-access-custom-html' }, tx('customHtml')),
               h('div', { className: 'dsh-access-field' },
-                h('textarea', { id: 'dsh-access-custom-html', maxLength: 32768, rows: 12, spellCheck: false, autoCapitalize: 'off', autoComplete: 'off', value: customHtml, onChange: (e) => setCustomHtml(e.target.value) }),
-                h('p', { className: 'dsh-access-hint' }, tx('customHtmlHint')),
+                fieldBox('customHtml', h('textarea', inputProps('customHtml', customHtml, (e) => setCustomHtml(e.target.value), { id: 'dsh-access-custom-html', maxLength: 32768, rows: 12, spellCheck: false, autoCapitalize: 'off', autoComplete: 'off' }, (value) => value.length <= 32768)), tx('customHtmlHint')),
               ),
             ),
-            h('div', { className: 'dsh-access-actions' },
-              h('button', { className: 'dsh-access-button dsh-access-button-primary', type: 'button', disabled: busy || loading, onClick: saveAppearance }, tx('saveAppearance')),
+            actionLine(appearanceStatus, tx('backgroundHint'), h('div', { className: 'dsh-access-buttons' },
+              h('button', { className: 'dsh-access-button dsh-access-button-primary dsh-field-submit', type: 'button', disabled: busy || loading, onClick: saveAppearance }, tx('saveAppearance')),
               h('button', { className: 'dsh-access-button', type: 'button', disabled: loading, onClick: () => window.open('/auth/login', '_blank', 'noopener,noreferrer') }, tx('previewLogin')),
-            ),
-            renderStatus(appearanceStatus),
+            )),
           ),
           h('section', { className: 'dsh-access-block' },
             h('h3', null, tx('turnstileTitle')),
@@ -357,27 +442,21 @@ window.__ModuleLoader__.load({
             h('p', { className: 'dsh-access-hint' }, tx('rotationBackupInfo')),
             h('div', { className: 'dsh-access-row' },
               h('label', { htmlFor: 'dsh-access-new-site-key' }, tx('turnstileSiteKey')),
-              h('div', { className: 'dsh-access-field' }, h('input', { id: 'dsh-access-new-site-key', autoComplete: 'off', maxLength: 256, value: turnstileSiteKey, onChange: (e) => setTurnstileSiteKey(e.target.value) })),
+              h('div', { className: 'dsh-access-field' }, fieldBox('turnstileSiteKey', h('input', inputProps('turnstileSiteKey', turnstileSiteKey, (e) => setTurnstileSiteKey(e.target.value), { id: 'dsh-access-new-site-key', autoComplete: 'off', maxLength: 256 }, (value) => Boolean(value.trim()))), tx('keyFieldsRequired'))),
             ),
             h('div', { className: 'dsh-access-row' },
               h('label', { htmlFor: 'dsh-access-new-secret-key' }, tx('turnstileSecretKey')),
-              h('div', { className: 'dsh-access-field' }, h('input', { id: 'dsh-access-new-secret-key', type: 'password', autoComplete: 'new-password', maxLength: 512, value: turnstileSecretKey, onChange: (e) => setTurnstileSecretKey(e.target.value) })),
+              h('div', { className: 'dsh-access-field' }, fieldBox('turnstileSecretKey', h('input', inputProps('turnstileSecretKey', turnstileSecretKey, (e) => setTurnstileSecretKey(e.target.value), { id: 'dsh-access-new-secret-key', type: 'password', autoComplete: 'new-password', maxLength: 512 }, (value) => Boolean(value.trim()))), tx('keyFieldsRequired'))),
             ),
             h('div', { className: 'dsh-access-row' },
               h('label', { htmlFor: 'dsh-access-turnstile-password' }, tx('turnstilePassword')),
-              h('div', { className: 'dsh-access-field' }, h('input', { id: 'dsh-access-turnstile-password', type: 'password', autoComplete: 'current-password', value: turnstilePassword, onChange: (e) => setTurnstilePassword(e.target.value) })),
+              h('div', { className: 'dsh-access-field' }, fieldBox('turnstilePassword', h('input', inputProps('turnstilePassword', turnstilePassword, (e) => setTurnstilePassword(e.target.value), { id: 'dsh-access-turnstile-password', type: 'password', autoComplete: 'current-password' }, (value) => Boolean(value))), tx('keyFieldsRequired'))),
             ),
-            h('div', { className: 'dsh-access-actions' },
-              h('button', { className: 'dsh-access-button dsh-access-button-primary', type: 'button', disabled: busy || loading, onClick: verifyTurnstileKeys }, busy ? tx('verifyingKeys') : tx('verifyKeys')),
-            ),
-            renderStatus(turnstileStatusMessage),
+            actionLine(turnstileStatusMessage, tx('turnstileHint'), h('button', { className: 'dsh-access-button dsh-access-button-primary dsh-field-submit', type: 'button', disabled: busy || loading, onClick: verifyTurnstileKeys }, busy ? tx('verifyingKeys') : tx('verifyKeys'))),
           ),
           h('div', { className: 'dsh-access-block' },
             h('h3', null, tx('signOutTitle')),
-            h('div', { className: 'dsh-access-actions' },
-              h('button', { className: 'dsh-access-button', type: 'button', disabled: busy || loading, onClick: signOut }, busy ? tx('signingOut') : tx('signOut')),
-            ),
-            renderStatus(sessionStatus),
+            actionLine(sessionStatus, '', h('button', { className: 'dsh-access-button dsh-field-submit', type: 'button', disabled: busy || loading, onClick: signOut }, busy ? tx('signingOut') : tx('signOut'))),
           ),
         ),
       );
